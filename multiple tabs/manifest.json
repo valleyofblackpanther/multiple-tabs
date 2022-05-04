@@ -1,0 +1,22 @@
+{
+  "platform-version": "2.2",
+  "product": {
+    "freshdesk": {
+      "events": {
+        "onTicketCreate": {
+          "handler": "onTicketCreateHandler"
+        },
+        "onConversationCreate": {
+          "handler": "onConversationCreateCallback"
+        }
+      }
+    }
+  },
+  "whitelisted-domains": [
+    "https://*.freshdesk.com"
+  ],
+  "engines": {
+    "node": "14.19.1",
+    "fdk": "8.0.1"
+  }
+}

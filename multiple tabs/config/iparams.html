@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="https://static.freshdev.io/fdk/2.0/assets/freshdesk.css">
+  <script src="https://static.freshdev.io/fdk/2.0/assets/fresh_client.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="./assets/iparams.css">
+  <script src="./assets/iparams.js"></script>
+  <script type="module" src="https://unpkg.com/@freshworks/crayons@v3/dist/crayons/crayons.esm.js">
+  </script>
+  <script nomodule src="https://unpkg.com/@freshworks/crayons@v3/dist/crayons/crayons.js">
+  </script>
+  <script type="module" src="https://unpkg.com/@freshworks/crayons@v3/dist/crayons/crayons.esm.js"></script>
+  <script type="module">
+    import { registerIconLibrary } from 'https://unpkg.com/@freshworks/crayons@v3/dist/crayons/index.esm.js';
+    registerIconLibrary('feather', {
+      resolver: (name) => `https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/icons/${name}.svg`,
+      mutator: (svg, name) => (name === 'feather') ? svg.setAttribute('fill', 'currentColor') : false
+    });
+  </script>
+  <style>
+    .dropdown {
+      width: 10%;
+      color: black;
+      border: 5;
+    }
+
+    #error_div {
+      color: red;
+    }
+
+    .select2-container {
+      width: 70%;
+    }
+
+    .select2-container--default {
+      width: 80% !important;
+    }
+
+    .select2-locked {
+      padding: 0px !important;
+    }
+
+    .loading {
+      position: fixed;
+      margin: auto;
+      top: 10%;
+      left: 0;
+      right: 0;
+      z-index: 999;
+      font-size: 30px;
+    }
+  </style>
+
+
+</head>
+
+<body>
+  <div class="settings-page">
+    <div id="errorMsg"></div>
+
+    <fw-tabs id="fwTabs">
+      <fw-tab slot="tab" panel="freshdesk" id="tab1">Freshdesk configuration</fw-tab>
+      <fw-tab slot="tab" panel="mandatory" id="tab2">Mandatory Fields configuration</fw-tab>
+      <fw-tab slot="tab" panel="official" id="tab3">Escalation configuration</fw-tab>
+
+      <!-- disabled=true -->
+      <div class="loading">
+        <center>
+          <i class="fa fa-spinner fa-pulse loader" style="font-size: 40px"></i><br /><br />
+          <fw-spinner size="medium" color="#4388f0"></fw-spinner>
+        </center>
+      </div>
+
+      <fw-tab-panel name="freshdesk" id="stepTab1">
+        <div>
+          <h4><b>Freshdesk Authentication</b></h4>
+          <img src="../app/delete.svg" alt="" />
+          <div class="form-group">
+            <label>API Key</label>
+            <input type="text" class="form-control" id="apikey" placeholder="Enter freshdesk API Key" />
+            <p class="required" id="req">required*</p>
+            <small>Please click
+              <a href="https://support.freshdesk.com/support/solutions/articles/215517-how-to-find-your-api-key"
+                target="_new">here</a>
+              to find your apikey.</small>
+          </div>
+          <div class="form-group">
+            <label>Subdomain</label>
+            <div class="input-group">
+              <span class="input-group-addon">https://</span>
+              <input type="text" class="form-control" id="subdomain" placeholder="Enter freshdesk subdomain" />
+              <span class="input-group-addon">.freshdesk.com</span>
+            </div>
+            <p class="required" id="sReq">required*</p>
+            <small>Example: https://<b>subdomain</b>.freshdesk.com</small>
+          </div>
+          <div class="form-group text-right">
+            <button id="validateFreshdesk" class="btn btn-primary" onclick='onclickValidateButton()'>Validate</button>
+          </div>
+        </div>
+      </fw-tab-panel>
+
+      <fw-tab-panel name="mandatory" i>
+        <div id='mandatoryError' class="Error">
+          <p>Please Fill & Validate the Freshdesk Configuration Tab and Come this Page</p>
+        </div>
+        <div id="stepTab2">
+          <div id="ticketFields"></div>
+          <br />
+          <div class="form-group text-right">
+            <button id="saveFreshdesk" class="btn btn-primary">Next</button>
+          </div>
+        </div>
+      </fw-tab-panel>
+
+      <fw-tab-panel name="official">
+        <div id="customeError" class="Error">
+          <p>Please Fill the Mandatory Fields and Come this page</p>
+        </div>
+        <div id="stepTab3">
+          <div class="mb-10">
+            <label>Esculation Emails<span class="required">*</span></label>
+            <input type="text" class="form-control" id="escalationInput" placeholder="Enter Esculation Emails" />
+            <small>Enter an escalation mail which has to compared with the conversation participants</small>
+          </div>
+          <div>
+            <fieldset class="fieldSetCls">
+              <legend class="legend">list of escalation mails</legend>
+              <ul id="escalationContainer" class="ul-container"></ul>
+            </fieldset>
+          </div>
+          <div class="mb-10" id="esculationContainer">
+            <label>Reassign Group<span class="required">*</span></label>
+            <select id="selectEl" class="select"></select>
+            <small>Select a Group</small>
+          </div>
+          <br />
+          <div class="form-group text-right">
+            <button id="customeFreshdesk" class="btn btn-primary">Save Fields</button>
+          </div>
+        </div>
+      </fw-tab-panel>
+
+    </fw-tabs>
+  </div>
+
+
+</body>
+
+<script type="text/javascript">
+  let ticketFields = [],
+    ticketFieldValues = {}
+
+  $(".loading").hide()
+  let totalTicketFields = []
+  let configData = { 'apiKey': '', 'subdomain': '' };
+  let escalationEmails = []
+  let groupId = null
+  let step1 = false
+  let step2 = false
+  let step3 = false
+
+  const deleteIcon = '<svg style="font-size: 15px;width: 20px;" xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 122.88 122.88"><defs><style>.cls-1{fill:#444;fill-rule:evenodd;}</style></defs><title>close</title><path class="cls-1" d="M61.44,0A61.44,61.44,0,1,1,0,61.44,61.44,61.44,0,0,1,61.44,0ZM74.58,36.8c1.74-1.77,2.83-3.18,5-1l7,7.13c2.29,2.26,2.17,3.58,0,5.69L73.33,61.83,86.08,74.58c1.77,1.74,3.18,2.83,1,5l-7.13,7c-2.26,2.29-3.58,2.17-5.68,0L61.44,73.72,48.63,86.53c-2.1,2.15-3.42,2.27-5.68,0l-7.13-7c-2.2-2.15-.79-3.24,1-5l12.73-12.7L36.35,48.64c-2.15-2.11-2.27-3.43,0-5.69l7-7.13c2.15-2.2,3.24-.79,5,1L61.44,49.94,74.58,36.8Z"/></svg>'
+
+  function getConfigs(configs) {
+    console.log('In getConfigs', configs)
+    const apiKey = document.getElementById('apikey');
+    const subdomain = document.getElementById('subdomain');
+    const selectElement = document.getElementById('selectEl');
+    const esculationCon = document.getElementById('escalationContainer');
+    $('#stepTab2').hide()
+    $('#stepTab3').hide()
+    apikey.value = configs.api_key
+    subdomain.value = configs.subdomain
+    ticketFieldValues = configs.ticketFieldValues
+    if (configs.esculation_emails) {
+      escalationEmails = configs.esculation_emails.map((email, index) => { return { id: index, email: email } })
+    }
+    groupId = configs.group_id
+    getTheGroups()
+    createAndAppend()
+  }
+
+  function validate() {
+    console.log('In validate')
+    console.log('ticketFields', ticketFields, ticketFieldValues)
+    const apiKey = document.getElementById('apikey');
+    const subdomain = document.getElementById('subdomain');
+    console.log(apiKey)
+    if (step1 === true && step2 === true && step3 === true) return true
+    if (apikey.value === '' && subdomain.value === '') {
+      return false
+    } else if (apiKey.value === '') {
+      return false
+    } else if (subdomain.value === '') {
+      return false
+    } else {
+      console.log('error 1')
+      const errorText = 'please fill the next fields';
+      showErrorMsg(errorText)
+      return false
+    }
+    console.log('error 2')
+    return false
+  }
+
+  function postConfigs() {
+    console.log('In postConfigs')
+    console.log(escalationEmails)
+    var api_key = document.getElementById('apikey').value.trim();
+    var subdomain = document.getElementById('subdomain').value;
+    console.log(api_key);
+    console.log(subdomain)
+    return {
+      __meta: {
+        secure: ["api_key"]
+      },
+      api_key,
+      subdomain,
+      ticketFieldValues: ticketFieldValues,
+      group_id: Number(groupId),
+      esculation_emails: escalationEmails.map(each => each.email),
+    }
+  }
+
+  //api_key and subdomain algorithom
+  function onclickValidateButton() {
+    const api_key = document.getElementById('apikey')
+    const subdomain = document.getElementById('subdomain')
+    if (api_key.value === '' && subdomain.value === '') {
+      const errorText = 'Please Enter the API key & Subdomain'
+      showErrorMsg(errorText)
+    } else if (api_key.value === '') {
+      const errorText = 'Please Enter the API key';
+      showErrorMsg(errorText);
+    } else if (subdomain.value === '') {
+      const errorText = 'Please Enter the Subdomain';
+      showErrorMsg(errorText);
+    } else {
+      step1 = true
+      $(".loading").show()
+      $("#stepTab1").css({ opacity: 0.2 })
+      // $("#validateFreshdesk").attr("disabled", true)
+
+      let ticketFieldsPromise = getTicketFields()
+      console.log('onClickValidation Response', ticketFieldsPromise)
+      showingStatus(ticketFieldsPromise)
+    }
+  }
+
+  function getTicketFields() {
+    return new Promise(function (resolve, reject) {
+      app.initialized().then(function (client) {
+        var api_key = document.getElementById('apikey').value.trim();
+        var subdomain = document.getElementById('subdomain').value;
+        configData.apiKey = api_key
+        configData.subdomain = subdomain
+        console.log('apiKey & subdomain~ ', api_key, subdomain)
+        // console.log('configData ~>>', configData)
+        const url = `https://${subdomain}.freshdesk.com//api/v2/ticket_fields`;
+        console.log('url ~ ', url)
+        var headers = { Authorization: `Basic ${btoa(api_key)}`, "content-Type": "application/json" };
+        const options = { headers: headers };
+        client.request.get(url, options)
+          .then(
+            function (data) {
+              $(".loading").hide()
+              $("#stepTab1").css({ opacity: 1 })
+              document.getElementById('fwTabs').setAttribute('active-tab-index', 1);
+              console.log('Data', data)
+              step1 = true
+              $('#stepTab2').show()
+              $('#mandatoryError').hide()
+              totalTicketFields = JSON.parse(data.response)
+              filterTicketFields(totalTicketFields)
+              //handle "data"
+              //"data" is a json string with status, headers, and response.
+              resolve(data)
+            },
+            function (error) {
+              //handle failure
+              reject({
+                source: "Freshdesk",
+                Message:
+                  "Validation Error Subdomain and API key doesn't match!",
+                error,
+              });
+            }
+          );
+      })
+    })
+  }
+
+  function showingStatus(ticketFieldsPromise) {
+    console.log('test', ticketFieldsPromise, totalTicketFields)
+
+    Promise.all([ticketFieldsPromise]).then((res) => {
+      const successText = 'validation success Please fill Mandatory Fields'
+      showSuccessMsg(successText)
+      console.log(res)
+    })
+      .catch((err) => {
+        $(".loading").hide()
+        $("#stepTab1").css({ opacity: 1 })
+        $("#validateFreshdesk").attr("disabled", false)
+        showErrorMsg(err.Message)
+      });
+  }
+
+  function showSuccessMsg(text) {
+    const errorEle = document.getElementById('errorMsg')
+    errorEle.innerHTML = `${text}`
+    errorEle.classList.add('successHig');
+    setTimeout(() => {
+      errorEle.innerHTML = ''
+      errorEle.classList.remove('successHig');
+    }, [5000])
+  }
+
+  function showErrorMsg(err) {
+    const errorEle = document.getElementById('errorMsg')
+    errorEle.innerHTML = `${err}`
+    errorEle.classList.add('errorHig');
+    setTimeout(() => {
+      errorEle.innerHTML = ''
+      errorEle.classList.remove('errorHig');
+    }, [5000])
+    console.log('er ~', err)
+  }
+
+
+  // esculation emials algorithom
+  const input = document.getElementById("escalationInput")
+  console.log(input)
+  i = escalationEmails.length + 1
+  input.addEventListener('keydown', (event) => {
+    var name = event.key;
+    var code = event.code;
+    if (name === 'Enter') {
+      // console.log(input.value.endsWidth('@gmail.com'))
+      // input.value.endsWith('@gmail.com')
+      if (input.value !== '' && validateEmail(input.value)) {
+        escalationEmails.push({ 'id': i, 'email': input.value })
+        createAndAppend()
+        i += 1
+      } else {
+        const errorText = 'Please Enter the Valid Email'
+        showErrorMsg(errorText)
+      }
+      console.log(escalationEmails)
+      input.value = ''
+    }
+  }, false);
+
+
+  function validateEmail(email) {
+    let isValid = false
+    let regex = new RegExp('[a-z0-9]+@[a-z]+\.[a-z]{2,3}');
+    let testEmails = [email];
+    testEmails.forEach((address) => {
+      console.log(regex.test(address))
+      isValid = regex.test(address)
+    });
+    return isValid
+  }
+
+
+  const deleteEmail = (event) => {
+    const id = event.target.value
+    const newMails = escalationEmails.filter(each => each.id != id)
+    escalationEmails = newMails
+    if (escalationEmails.length > 0) {
+      createAndAppend()
+    } else {
+      const emailList = document.getElementById('escalationContainer')
+      emailList.innerHTML = ''
+    }
+  }
+
+  const createAndAppend = () => {
+    const emailList = document.getElementById('escalationContainer')
+    emailList.innerHTML = ''
+    for (let each of escalationEmails) {
+      console.log("Each", each)
+      const lis = document.createElement('li');
+      const xButton = document.createElement('button');
+      xButton.innerHTML = `X`;
+      xButton.classList.add('deleteButton')
+      lis.setAttribute('key', each.id);
+      xButton.setAttribute('value', each.id);
+      xButton.addEventListener('click', deleteEmail)
+      const para = document.createElement('p');
+      para.innerHTML = each.email;
+      para.classList.add('paraCls')
+      lis.classList.add('li-container')
+      lis.appendChild(para)
+      lis.appendChild(xButton)
+      emailList.appendChild(lis)
+    }
+  }
+
+  const mandatoryNextBtn = document.getElementById('saveFreshdesk');
+  mandatoryNextBtn.addEventListener('click', () => {
+    let removeCount = 0
+    ticketFieldValues = {}
+
+    $("input, select").each(function () {
+      let inputName = $(this)[0].name
+      let inputType = $(this)[0].type
+
+      if (ticketFields.includes(inputName)) {
+        let input_value
+
+        if (inputType == "checkbox") {
+          input_value = $(this)[0].checked
+        } else if (inputType == "date") {
+          input_value = Date($(this).val())
+        } else if (inputType == "number") {
+          input_value = Number($(this).val())
+        } else {
+          input_value = $(this).val()
+        }
+
+        if (
+          inputName == "group_id" ||
+          inputName == "responder_id" ||
+          inputName == "product_id"
+        ) {
+          input_value = Number(input_value)
+        }
+
+        if (input_value && input_value != "") {
+          let isRemove = false
+
+          if (inputType == "select-one" && input_value == "NN") {
+            removeCount += 1
+            isRemove = true
+          }
+
+          if (!isRemove) {
+            ticketFieldValues[inputName] = input_value
+          }
+        }
+      }
+    })
+
+    if (ticketFields.length - removeCount == Object.keys(ticketFieldValues).length) {
+      $(".loading").hide()
+      // $("#step2").hide()
+      // $("#step3").show()
+
+      freshdeskTicketFieldValidation = true
+    } else {
+      const errorText = "All ticket fields must be filled out!"
+      showErrorMsg(errorText)
+      showAlert(
+        "step2",
+        "saveFreshdesk",
+        "alertFailure",
+        "All ticket fields must be filled out!"
+      )
+    }
+
+    console.log('next~ ticketValues', ticketFieldValues)
+    if (Object.keys(ticketFieldValues).includes('group_id')) {
+      $('#esculationContainer').hide()
+      groupId = ticketFieldValues.group_id
+    } else {
+      $('#esculationContainer').show()
+      createTheSelectedOptions()
+    }
+    step2 = true
+
+    const successText = 'Validation success, Please fill the Custom Fields'
+    showSuccessMsg(successText)
+    $('#stepTab3').show()
+    $('#customeError').hide()
+    document.getElementById('fwTabs').setAttribute('active-tab-index', 2)
+    $(".loading").show()
+    $("#stepTab2").css({ opacity: 0.5 })
+    $("#stepTab2").css({ opacity: 1 })
+    $(".loading").hide()
+    // }
+  })
+
+  function createTheSelectedOptions() {
+    console.log('In get Select')
+    console.log('totoal ticketFields >>>>>>>', totalTicketFields)
+    const groupObject = totalTicketFields.filter(each => each.name === 'group')
+    console.log(groupObject)
+    const billingGroups = groupObject[0].choices
+    console.log(billingGroups)
+
+    // if (step2 === true) {
+    const selectEle = document.getElementById('selectEl');
+    selectEle.innerHTML = ""
+    selectEle.innerHTML += '<option>Select group</option>'
+    for (let [k, v] of Object.entries(billingGroups)) {
+      const op = document.createElement('option');
+      if (Number(groupId) === v) {
+        console.log("checked")
+        op.selected = true
+      }
+      op.value = v
+      op.innerHTML = k
+      selectEle.appendChild(op)
+      console.log("a", k, v);
+    }
+    selectEle.addEventListener('change', (event) => {
+      groupId = event.target.value
+      console.log('groupId >>', groupId)
+    })
+  }
+  // }
+
+  const saveButtonEle = document.getElementById('customeFreshdesk');
+  saveButtonEle.addEventListener('click', () => {
+    if (escalationEmails.length > 0 && groupId != null) {
+      step3 = true
+      const successText = 'Validation Success, Please Click on the Install button';
+      showSuccessMsg(successText)
+    } else {
+      const errorEle = document.getElementById('errorMsg')
+      errorEle.innerHTML = 'please fill the Email and group'
+      errorEle.classList.add('errorHig');
+      setTimeout(() => {
+        errorEle.innerHTML = ''
+        errorEle.classList.remove('errorHig');
+      }, [2000])
+    }
+  })
+
+  $('#req').hide()
+  const apiKey = document.getElementById('apikey');
+  apiKey.addEventListener('focus', (event) => {
+    $('#req').hide()
+    event.target.style.borderColor = '#4388f0'
+    event.target.style.borderWidth = '3px'
+  });
+  apiKey.addEventListener('blur', (event) => {
+    if (event.target.value === '') {
+      $('#req').show()
+      event.target.style.borderColor = 'red'
+    } else {
+      $('#req').hide()
+      event.target.style.borderColor = ''
+    }
+
+  });
+
+  $('#sReq').hide()
+  const subdomainEle = document.getElementById('subdomain');
+  subdomainEle.addEventListener('focus', (event) => {
+    $('#sReq').hide()
+    event.target.style.border = '3px solid #4388f0'
+    // event.target.style.borderWidth='3px';
+  });
+  subdomainEle.addEventListener('blur', (event) => {
+    if(event.target.value===''){
+      $('#sReq').show()
+      event.target.style.border  = '3px solid red'
+    }else{
+      event.target.style.border = ''
+    }
+  });
+
+  const emailInputEle = document.getElementById('escalationInput');
+  emailInputEle.addEventListener('focus', (event) => {
+    event.target.style.borderColor = '#4388f0'
+    event.target.style.borderWidth = '3px'
+  });
+  emailInputEle.addEventListener('blur', (event) => {
+    event.target.style.border = ''
+  });
+
+  const selectElement = document.getElementById('selectEl');
+  selectElement.addEventListener('focus', (event) => {
+    event.target.style.borderColor = '#4388f0'
+    event.target.style.borderWidth = '3px'
+  });
+  selectElement.addEventListener('blur', (event) => {
+    event.target.style.border = ''
+  });
+
+  // test mandatory
+  function filterTicketFields(ticketFields) {
+    let defaultFieldList = []
+    let customFields = []
+    let customFieldList = []
+
+    defaultFieldList = ticketFields.filter(function (field) {
+      if (
+        field.default &&
+        field.required_for_agents &&
+        field.name !== "requester" &&
+        field.name !== "subject" &&
+        field.name !== "description" &&
+        field.name !== "status" &&
+        field.name !== "priority" &&
+        field.name !== "company"
+      )
+        return true
+      else return false
+    })
+
+    customFields = ticketFields.filter(function (field) {
+      if (!field.default && field.required_for_agents) return true
+      else return false
+    })
+
+    customFieldList = customFields.filter(function (field) {
+      if (
+        field.name == "cf_catch_orderid" ||
+        field.name == "cf_catch_date" ||
+        field.name == "cf_catch_status" ||
+        field.name.includes("cf_fsm")
+      )
+        return false
+      else return true
+    })
+
+    let fieldList = {
+      default: defaultFieldList,
+      custom: customFieldList
+    }
+
+    if (fieldList.default.length > 0 || fieldList.custom.length > 0) {
+      document.getElementById('ticketFields').innerHTML = ''
+      showTicketFields(fieldList)
+    } else {
+      $("#ticketFields").append(
+        `<div class="form-group"><p style="color: red">No mandatory fields found! Please click install button</p></div>`
+      )
+    }
+  }
+
+  function showTicketFields(fieldList) {
+    ticketFields = []
+
+    fieldList.default.map(function (field) {
+      let temp
+      let fieldString = ""
+
+      if (field.name == "ticket_type") temp = "type"
+      else if (field.name == "group") temp = "group_id"
+      else if (field.name == "agent") temp = "responder_id"
+      else if (field.name == "product") temp = "product_id"
+      else temp = field.name
+
+      ticketFields.push(temp)
+
+      if (field.choices) {
+        if (temp == "group_id" || temp == "responder_id" || temp == "product_id") {
+          fieldString += `<div class="form-group"><label>${field.label}</label>`
+          fieldString += `<select class="form-control" id="${temp}" name="${temp}" placeholder="Select ${field.label}" required>`
+          fieldString += `<option value="", selected>Select ${field.label}</option>`
+
+          for (let key in field.choices) {
+            fieldString += `<option value="${field.choices[key]}">${key}</option>`
+          }
+
+          fieldString += `</select></div>`
+        } else {
+          fieldString += `<div class="form-group"><label>${field.label}</label>`
+          fieldString += `<select class="form-control" id="${temp}" name="${temp}" placeholder="Select ${field.label}" required>`
+          fieldString += `<option value="", selected>Select ${field.label}</option>`
+
+          field.choices.map(function (choice) {
+            fieldString += `<option value="${choice}">${choice}</option>`
+          })
+
+          fieldString += `</select></div>`
+        }
+      } else {
+        fieldString += `<div class="form-group"><label>${field.label}</label>`
+        fieldString += `<input type="text" class="form-control" id="${temp}" name="${temp}" placeholder="Enter ${field.label}"></div>`
+      }
+
+      $("#ticketFields").append(fieldString)
+    })
+
+    fieldList.custom.map(function (field) {
+      let temp = field.name
+      let fieldString = ""
+      ticketFields.push(temp)
+
+      if (field.type == "nested_field") {
+        fieldString += `<input type="hidden" id="category${field.id
+          }" value='${JSON.stringify(field)}'>`
+        fieldString += `<input type="hidden" id="subCategory${field.id}" value="">`
+        fieldString += `<div class="form-group"><label>${field.label}</label>`
+
+        fieldString += `<select class="form-control" id="${temp}" name="${temp}" placeholder="Select ${field.label}" onchange="loadCategoryOne(this.value, ${field.id})" required>`
+        fieldString += `<option value="", selected>Select ${field.label}</option>`
+
+        for (let key in field.choices) {
+          fieldString += `<option value="${key}">${key}</option>`
+        }
+
+        fieldString += `</select></div>`
+        fieldString += `<div class="dependent" style="display: none; border-left: 2px solid green">`
+
+        let i = 0
+
+        field.nested_ticket_fields.map(function (subCategory) {
+          ticketFields.push(subCategory.name)
+          i++
+          fieldString += `<div class="form-group" id="subCategory${field.id}${i}" style="margin-left: 10px">`
+
+          if (i == 1) {
+            fieldString += `<select class="form-control" id="${subCategory.name}" name="${subCategory.name}" placeholder="Select ${subCategory.label}" onchange="loadCategoryTwo(this.value, ${field.id})" required>`
+            fieldString += `<option value="", selected>Select ${subCategory.label}</option>`
+          } else {
+            fieldString += `<select class="form-control" id="${subCategory.name}" name="${subCategory.name}" placeholder="Select ${subCategory.label}" required>`
+            fieldString += `<option value="", selected>Select ${subCategory.label}</option>`
+          }
+
+          fieldString += `</select></div>`
+        })
+
+        fieldString += `</div>`
+      } else if (field.type == "custom_dropdown") {
+        fieldString += `<div class="form-group"><label>${field.label}</label>`
+        fieldString += `<select class="form-control" id="${temp}" name="${temp}" placeholder="Select ${field.label}" required>`
+        fieldString += `<option value="", selected>Select ${field.label}</option>`
+
+        field.choices.map(function (choice) {
+          fieldString += `<option value="${choice}"">${choice}</option>`
+        })
+
+        fieldString += `</select></div>`
+      } else if (field.type == "custom_date") {
+        fieldString += `<div class="form-group"><label>${field.label}</label>`
+        fieldString += `<input type="date" class="form-control" id="${temp}" name="${temp}" placeholder="Enter ${field.label}" required></div>`
+      } else if (field.type == "custom_number") {
+        fieldString += `<div class="form-group"><label>${field.label}</label>`
+        fieldString += `<input type="number" class="form-control" id="${temp}" name="${temp}" placeholder="Enter ${field.label}" required></div>`
+      } else if (field.type == "custom_checkbox") {
+        fieldString += `<div class="form-group"><label><input type="checkbox" id="${temp}" name="${temp}" placeholder="Enter ${field.label}" required> ${field.label}</label></div>`
+      } else {
+        fieldString += `<div class="form-group"><label>${field.label}</label>`
+        fieldString += `<input type="text" class="form-control" id="${field.label}" name="${temp}" placeholder="Enter ${field.label}" required></div>`
+      }
+
+      $("#ticketFields").append(fieldString)
+    })
+
+    if (Object.keys(ticketFieldValues).length > 0) {
+      autoFillData(ticketFieldValues)
+    }
+  }
+
+  function loadCategoryOne(selectedField, categoryId) {
+    $(".dependent").show()
+    $(`#subCategory${categoryId}1`).show()
+    $(`#subCategory${categoryId}2`).hide()
+
+    let jsonData = JSON.parse($(`#category${categoryId}`).val())
+    let i = 0
+
+    jsonData.nested_ticket_fields.map(function (subCategory) {
+      i++
+
+      $(`#${subCategory.name}`).empty()
+      $(`#${subCategory.name}`).append(
+        `<option value="">Select ${subCategory.name}</option>`
+      )
+
+      if (selectedField != "") {
+        if (i == 1) {
+          $(`#subCategory${categoryId}`).attr(
+            "value",
+            JSON.stringify(jsonData.choices[selectedField])
+          )
+
+          Object.keys(jsonData.choices[selectedField]).map(function (value) {
+            $(`#${subCategory.name}`).append(
+              `<option value='${value}'>${value}</option>`
+            )
+          })
+        }
+      } else {
+        $(`#subCategory${categoryId}1`).hide()
+      }
+    })
+  }
+
+  function loadCategoryTwo(selectedField, categoryId) {
+    let jsonData = JSON.parse($(`#category${categoryId}`).val())
+    let subCategoryData = JSON.parse($(`#subCategory${categoryId}`).val())
+    let i = 0
+
+    jsonData.nested_ticket_fields.map(function (subCategory) {
+      i++
+
+      if (i === 2) {
+        $(`#subCategory${categoryId}2`).show()
+        $(`#${subCategory.name}`).empty()
+        $(`#${subCategory.name}`).append(
+          `<option value="">Select ${subCategory.label}</option>`
+        )
+
+        if (selectedField != "" && subCategoryData[selectedField].length > 0) {
+          subCategoryData[selectedField].map(function (value) {
+            $(`#${subCategory.name}`).append(
+              `<option value="${value}">${value}</option>`
+            )
+          })
+        } else {
+          $(`#${subCategory.name}`).empty()
+          $(`#${subCategory.name}`).append(
+            `<option value="NN">Select ${subCategory.label}</option>`
+          )
+          $(`#subCategory${categoryId}2`).hide()
+        }
+      }
+    })
+  }
+
+
+  function autoFillData(ticketFieldValues) {
+    console.log('balu', ticketFieldValues)
+    let fieldNames = []
+
+    for (let key in ticketFieldValues) {
+      fieldNames.push(key)
+    }
+
+    $("input, select").each(function () {
+      let inputName = $(this)[0].name
+      let inputType = $(this)[0].type
+
+      if (fieldNames.includes(inputName)) {
+        if (inputType == "checkbox") {
+          $(this).attr("checked", ticketFieldValues[inputName])
+          console.log('ticket', ticketFieldValues)
+        } else if (inputType == "select-one") {
+          $(this).val(ticketFieldValues[inputName]).trigger("change")
+          console.log('ticket', ticketFieldValues)
+        } else {
+          $(this).val(ticketFieldValues[inputName])
+          console.log('ticket', ticketFieldValues)
+        }
+      }
+    })
+  }
+
+  function separateFieldValues(ticketFieldValues) {
+    let defaultValues = {}
+    let customValues = {}
+
+    for (let key in ticketFieldValues) {
+      if (key.substring(0, 3) == "cf_") {
+        customValues[key] = ticketFieldValues[key]
+      } else {
+        defaultValues[key] = ticketFieldValues[key]
+      }
+    }
+
+    return {
+      default: defaultValues,
+      custom: customValues
+    }
+  }
+
+  function getTheGroups() {
+    return new Promise(function (resolve, reject) {
+      app.initialized().then(function (client) {
+        var api_key = document.getElementById('apikey').value.trim();
+        var subdomain = document.getElementById('subdomain').value;
+        configData.apiKey = api_key
+        configData.subdomain = subdomain
+        console.log('apiKey & subdomain~ ', api_key, subdomain)
+        // console.log('configData ~>>', configData)
+        const url = `https://${subdomain}.freshdesk.com//api/v2/ticket_fields`;
+        console.log('url ~ ', url)
+        var headers = { Authorization: `Basic ${btoa(api_key)}`, "content-Type": "application/json" };
+        const options = { headers: headers };
+        client.request.get(url, options)
+          .then(
+            function (data) {
+              // $(".loading").hide()
+              // $("#stepTab1").css({ opacity: 1 })
+              // document.getElementById('fwTabs').setAttribute('active-tab-index', 1);
+              // console.log('Data', data)
+              // step1 = true
+              // $('#stepTab2').show()
+              // $('#mandatoryError').hide()
+              totalTicketFields = JSON.parse(data.response)
+              createTheSelectedOptions()
+              // filterTicketFields(totalTicketFields)
+              // //handle "data"
+              // //"data" is a json string with status, headers, and response.
+              resolve(data)
+            },
+            function (error) {
+              //handle failure
+              reject({
+                source: "Freshdesk",
+                Message:
+                  "Validation Error Subdomain and API key doesn't match!",
+                error,
+              });
+            }
+          );
+      })
+    })
+  }
+
+
+</script>
+
+</html>
