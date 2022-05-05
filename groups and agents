@@ -1,1 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" type="text/css" href="https://static.freshdev.io/fdk/2.0/assets/freshdesk.css">
+  <script src="https://static.freshdev.io/fdk/2.0/assets/fresh_client.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="./assets/iparams.css">
+  <script src="./assets/iparams.js"></script>
+  <script type="module" src="https://unpkg.com/@freshworks/crayons@v3/dist/crayons/crayons.esm.js">
+  </script>
+  <script nomodule src="https://unpkg.com/@freshworks/crayons@v3/dist/crayons/crayons.js">
+  </script>
+  <style>
+    .dropdown {
+      width: 10%;
+      color: black;
+      border: 5;
+    }
+
+    #error_div {
+      color: red;
+    }
+
+    .select2-container {
+      width: 70%;
+    }
+
+    .select2-container--default {
+      width: 80% !important;
+    }
+
+    .select2-locked {
+      padding: 0px !important;
+    }
+
+    #req {
+      color: red;
+    }
+  </style>
+
+</head>
+
+<body>
+  <fw-tabs id="fwTabs">
+    <fw-tab slot="tab" panel="personal">Authentication</fw-tab>
+    <fw-tab slot="tab" panel="official">Disable</fw-tab>
+    <fw-tab slot="tab" panel="another">Hide</fw-tab>
+
+    <!-- <div class="loading">
+      <center>
+        <i class="fa fa-spinner fa-pulse loader" style="font-size: 40px"></i><br /><br />
+        <fw-spinner size="medium" color="#4388f0"></fw-spinner>
+      </center>
+    </div> -->
+
+    <fw-tab-panel name="personal" id="stepTab1">
+      <div>
+        <h4><b>Freshdesk Authentication</b></h4>
+        <img src="../app/delete.svg" alt="" />
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="text" class="form-control" id="apikey" placeholder="Enter freshdesk API Key" />
+          <p class="required" id="req" required*></p>
+          <small>Please click
+            <a href="https://support.freshdesk.com/support/solutions/articles/215517-how-to-find-your-api-key"
+              target="_new">here</a>
+            to find your apikey.</small>
+        </div>
+        <div class="form-group">
+          <label>Subdomain</label>
+          <div class="input-group">
+            <span class="input-group-addon">https://</span>
+            <input type="text" class="form-control" id="subdomain" placeholder="Enter freshdesk subdomain" />
+            <span class="input-group-addon">.freshdesk.com</span>
+          </div>
+          <p class="required" id="sReq">required*</p>
+          <small>Example: https://<b>subdomain</b>.freshdesk.com</small>
+        </div>
+        <div class="form-group text-right">
+          <button id="validateFreshdesk" class="btn btn-primary" onclick='onclickValidateButton()'>Validate</button>
+        </div>
+      </div>
+    </fw-tab-panel>
+
+    <fw-tab-panel name="official">
+      <!-- <div id='mandatoryError' class="Error">
+        <p>Please Fill & Validate the Freshdesk Configuration Tab and Come this Page</p>
+      </div> -->
+      <div id="stepTab2">
+        <h4><b>Disabling the agents</b></h4>
+        <div id="selectEleCont"></div>
+        <!-- <fw-select multiple label="Select the group" required="true" id="selectEl">
+
+        </fw-select> -->
+        <fw-select multiple label="Select the agent" required="true">
+
+        </fw-select>
+        <fw-select multiple label="Select the ticket fields" required="true">
+
+        </fw-select>
+        <fw-button color="secondary">Submit</fw-button>
+        <fw-button color="secondary">Save</fw-button>
+      </div>
+    </fw-tab-panel>
+
+    <fw-tab-panel name="another">
+      <div id="customeError" class="Error">
+        <p>Please Fill the Mandatory Fields and Come this page</p>
+      </div>
+      <div id="stepTab3">
+        <h4><b>Hiding the ticket fields </b></h4>
+        <fw-select multiple label="Select the group" required="true">
+
+        </fw-select>
+        <fw-select multiple label="Select the agent" required="true">
+
+        </fw-select>
+        <fw-select multiple label="Select the ticket fields" required="true">
+
+        </fw-select>
+        <fw-button color="secondary">Submit</fw-button>
+        <fw-button color="secondary">Save</fw-button>
+      </div>
+    </fw-tab-panel>
+
+  </fw-tabs>
+</body>
+
+
+
+<script type="text/javascript">
+groupId = null;
+
+  function getConfigs(configs) {
+    const apiey = document.getElementById('apikey');
+    const subdomain = document.getElementById('subdomain');
+    // $('#stepTab2').hide()
+    // $('#stepTab3').hide()
+    apikey.value = configs.api_key
+    subdomain.value = configs.subdomain
+    groupId = configs.group_id
+    createTheSelectedOptions();
+  }
+
+
+  function validate() {
+    const apiKey = document.getElementById('apikey');
+    const subdomain = document.getElementById('subdomain');
+    console.log(apiKey)
+    if (step1 === true && step2 === true && step3 === true) return true
+    if (apikey.value === '' && subdomain.value === '') {
+      return false
+    } else if (apiKey.value === '') {
+      return false
+    } else if (subdomain.value === '') {
+      return false
+    } else {
+      console.log('error 1')
+      const errorText = 'please fill the next fields';
+      showErrorMsg(errorText)
+      return false
+    }
+    console.log('error 2')
+    return false
+  }
+
+
+  function postConfigs() {
+    var api_key = document.getElementById('apikey').value.trim();
+    var subdomain = document.getElementById('subdomain').value;
+    console.log(api_key);
+    console.log(subdomain)
+    return {
+      __meta: {
+        secure: ["api_key"]
+      },
+      api_key,
+      subdomain,
+      ticketFieldValues: ticketFieldValues,
+      group_id: Number(groupId),
+    }
+  }
+
+  
+  function onclickValidateButton() {
+    const api_key = document.getElementById('apikey')
+    const subdomain = document.getElementById('subdomain')
+    if (api_key.value === '' && subdomain.value === '') {
+      const errorText = 'Please Enter the API key & Subdomain'
+      showErrorMsg(errorText)
+    } else if (api_key.value === '') {
+      const errorText = 'Please Enter the API key';
+      showErrorMsg(errorText);
+    } else if (subdomain.value === '') {
+      const errorText = 'Please Enter the Subdomain';
+      showErrorMsg(errorText);
+    } else {
+
+      step1 = true
+      $(".loading").show()
+      // $("#stepTab1").css({ opacity: 0.2 })
+      let agentFieldsPromise = getGroupFields("groups")
+      console.log('onClickValidation Response', JSON.parse(agentFieldsPromise))
+
+      // createTheSelectedOptions(agentData)
+      // const agentData = JSON.parse(data.response);
+      //     console.log("GROUP DATA >>>>>>", agentData);
+    }
+  }
+
+  function getGroupFields(rrr) {
+  return new Promise(function (resolve, reject) {
+      app.initialized().then(function (client) {
+        var api_key = document.getElementById('apikey').value.trim();
+        var subdomain = document.getElementById('subdomain').value;
+        // configData.apiKey = api_key
+        // configData.subdomain = subdomain
+        console.log('apiKey & subdomain~ ', api_key, subdomain)
+
+        var headers = {
+          Authorization: `Basic ${btoa(api_key)}`, "Content-Type": "application/json",
+        };
+        var options = { headers: headers };
+
+        var url = `https://${subdomain}.freshdesk.com/api/v2/admin/${rrr}`;
+
+        client.request.get(url, options).then(function (data) {
+          $(".loading").hide()
+          $("#stepTab1").css({ opacity: 1 })
+          document.getElementById('fwTabs').setAttribute('active-tab-index', 1);
+          console.log('Data', data)
+          step1 = true
+          // $('#stepTab2').show()
+          // $('#stepTab2').hide()
+
+         
+          resolve(data)
+        },
+          function (error) {
+            //handle error
+            reject({
+              source: "Freshdesk",
+              Message:
+                "Validation Error Subdomain and API key doesn't match!",
+              error,
+          });
+        }
+      );
+    })
+  })
+ }
+
+ function createTheSelectedOptions(convData) {
+    console.log('In get Select')
+    console.log('totoal ticketFields >>>>>>>', convData)
+
+    let great = []
+    for (let each of convData) {
+      great.push({ id: each.id, name: each.name })
+    }
+    console.log("ID DATA >>>", great)
+
+
+    // if (step2 === true) {
+    const selectEleCo = document.getElementById('selectEleCont');
+    const selectEle=document.createElement("fw-select")
+    selectEle.innerHTML = ""
+    selectEle.innerHTML += '<fw-select-option>Select group</fw-select-option>'
+    for (let each of great) {
+      const op = document.createElement('fw-select-option');
+      // if (Number(groupId) === v) {
+      //   console.log("checked")
+      //   op.selected = true
+      // }
+      op.value = each.id
+      op.innerHTML = each.name
+     
+    
+      selectEle.appendChild(op)
+    }
+    selectEleCo.appendChild(selectEle)
+    selectEle.addEventListener('fwChange', (event) => {
+      console.log("IN eventlistener")
+      groupId = event.target.value
+      console.log('groupId >>', groupId)
+      // getGroupFields("agents")
+    })
+  }
+
+
+
+
+
+  function showSuccessMsg(text) {
+    const errorEle = document.getElementById('errorMsg')
+    errorEle.innerHTML = `${text}`
+    errorEle.classList.add('successHig');
+    setTimeout(() => {
+      errorEle.innerHTML = ''
+      errorEle.classList.remove('successHig');
+    }, [5000])
+  }
+
+  function showErrorMsg(err) {
+    const errorEle = document.getElementById('errorMsg')
+    errorEle.innerHTML = `${err}`
+    errorEle.classList.add('errorHig');
+    setTimeout(() => {
+      errorEle.innerHTML = ''
+      errorEle.classList.remove('errorHig');
+    }, [5000])
+    console.log('er ~', err)
+  }
+
+
+</script>
+
+
+</html>
 
