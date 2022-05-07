@@ -103,7 +103,12 @@
 
 
 <script type="text/javascript">
-groupId = null;
+let groupId=""
+  let agentsList = []
+  let ticketFieldsValues = []
+  let agentId = ""
+  let step1 = false
+  let step2 = false
 
   function getConfigs(configs) {
     const apiey = document.getElementById('apikey');
