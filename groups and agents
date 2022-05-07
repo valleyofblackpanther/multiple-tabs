@@ -47,14 +47,6 @@
   <fw-tabs id="fwTabs">
     <fw-tab slot="tab" panel="personal">Authentication</fw-tab>
     <fw-tab slot="tab" panel="official">Disable</fw-tab>
-    <fw-tab slot="tab" panel="another">Hide</fw-tab>
-
-    <!-- <div class="loading">
-      <center>
-        <i class="fa fa-spinner fa-pulse loader" style="font-size: 40px"></i><br /><br />
-        <fw-spinner size="medium" color="#4388f0"></fw-spinner>
-      </center>
-    </div> -->
 
     <fw-tab-panel name="personal" id="stepTab1">
       <div>
@@ -105,27 +97,6 @@
         <fw-button color="secondary">Save</fw-button>
       </div>
     </fw-tab-panel>
-
-    <fw-tab-panel name="another">
-      <div id="customeError" class="Error">
-        <p>Please Fill the Mandatory Fields and Come this page</p>
-      </div>
-      <div id="stepTab3">
-        <h4><b>Hiding the ticket fields </b></h4>
-        <fw-select multiple label="Select the group" required="true">
-
-        </fw-select>
-        <fw-select multiple label="Select the agent" required="true">
-
-        </fw-select>
-        <fw-select multiple label="Select the ticket fields" required="true">
-
-        </fw-select>
-        <fw-button color="secondary">Submit</fw-button>
-        <fw-button color="secondary">Save</fw-button>
-      </div>
-    </fw-tab-panel>
-
   </fw-tabs>
 </body>
 
