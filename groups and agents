@@ -266,7 +266,7 @@ groupId = null;
 
 
   function showSuccessMsg(text) {
-    const errorEle = document.getElementById('errorMsg')
+    const errorEle = document.getElementById('Success-Error')
     errorEle.innerHTML = `${text}`
     errorEle.classList.add('successHig');
     setTimeout(() => {
@@ -276,7 +276,7 @@ groupId = null;
   }
 
   function showErrorMsg(err) {
-    const errorEle = document.getElementById('errorMsg')
+    const errorEle = document.getElementById('Success-Error')
     errorEle.innerHTML = `${err}`
     errorEle.classList.add('errorHig');
     setTimeout(() => {
