@@ -196,6 +196,11 @@ function radioHidden() {
   function onclickValidateButton() {
     const api_key = document.getElementById('apikey')
     const subdomain = document.getElementById('subdomain')
+     var isDisable = document.getElementById('dis');
+    var isHidden = document.getElementById('hid');
+
+    console.log("isDisable", isDisable)
+    console.log("isHidden", isHidden)
     if (api_key.value === '' && subdomain.value === '') {
       const errorText = 'Please Enter the API key & Subdomain'
       showErrorMsg(errorText)
