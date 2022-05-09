@@ -15,10 +15,24 @@ document.onreadystatechange = function () {
 
 async function onAppActivate() {
   
+  try{
   var getContact = await client.data.get('tickets');
   const iparams = await client.iparams.get();
   console.log("ticket data >>>", getContact)
   console.log("iparam data >>>", iparams)
+  
+    const ticketID = await getContact.tickets.id;
+  const ticketField = await iparams.ticketFieldValues;
+  const groupId = await iparams.group_id;
+  const agentId = await iparams.agent_id;
+  } catch(e) {
+    handleErr(e)
+  }
+  
+  function handleErr(err) {
+    console.error(`Error occured detils:`, err);
+  }
+
 
 
 
